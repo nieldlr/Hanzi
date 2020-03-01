@@ -135,6 +135,7 @@ Searches the dictionary based on input. Search type changes what data it returns
 Search type paramaters:
 
 *   'only' - this parameter returns only entries with the characters specfied. This is a means to find all compounds words with the characters specified.
+*   'exact' - this parameter returns entries that exactly match the characters specfied. 
 *   null - returns all occurences of the character.
 
 ```javascript
@@ -182,6 +183,13 @@ console.log(hanzi.dictionarySearch('雪'));
       definition: 'to take revenge and erase humiliation (idiom)' } ],
 
 [....] //Truncated for display purposes
+
+console.log(hanzi.dictionarySearch('小孩', 'exact'));
+
+[ { traditional: '小孩',
+    simplified: '小孩',
+    pinyin: "xiao3 hai2",
+    definition: 'child/CL:個|个[ge4]' } ]
 
 console.log(hanzi.dictionarySearch('心的小孩真', 'only'));
 
