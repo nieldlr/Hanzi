@@ -76,12 +76,12 @@ console.log(decomposition);
    { character: '橄',
      components1: [ '木', '敢' ],
      components2: [ '木', 'No glyph available', '耳', '⺙' ],
-     components3: [ '一', '丨', '八', '匚', '二', '丨', '二', '丿', '一', '乂' ] },
+     components3: [ '一', '丨', '㇒', '㇒', '匚', '一', '一', '丨', '丨', '一', '一', '丿', '一', '㇒', '㇒' ] },
   '黃':
    { character: '黃',
      components1: [ '廿', 'No glyph available' ],
      components2: [ '黃' ],
-     components3: [ '卄', '一', '一', '二', '丨', '凵', '八' ] } }
+     components3: [ '卄', '一', '一', '一', '一', '丨', '凵', '㇒', '㇒' ] } }
 ```
 
 #### hanzi.ifComponentExists(character/component);
@@ -326,8 +326,12 @@ NB: This feature is new. Data might not be hundred percent correct and consisten
 ```javascript
 console.log(hanzi.getCharactersWithComponent('囗'));
 
-[ '国','因','西','回','口','四','团','图','围','困','固','园','圆','圈','囚','圃','囤','囿','囡','囫','圜','囵','囹','圄','囝','圉','圊','釦']
+[ '国','因','西','回','口','四','团','图','围','困',
+  '固','园','圆','圈','囚','圃','囤','囿','囡','囫',
+  '圜','囵','囹','圄','囝','圉','圊','釦', /* ...and more */ ]
 ```
+
+The sample above is truncated for brevity. The full result is longer, because a character is matched whenever 囗 appears at its once- or radical-decomposition level — including characters where 囗 only surfaces after deeper decomposition (e.g. 回 = 囗 within 囗, so 徊, 茴 and 蛔 are matched too).
 
 #### hanzi.determinePhoneticRegularity(decomposition_object/character);
 
