@@ -699,6 +699,14 @@ describe('hanzidictionary', function() {
     assert.deepEqual(hanzi.dictionarySearch('爸', 'only'), expected);
   });
 
+  it('should do a dictionary search and return exact matches by passing the exact type', function() {
+    const results = hanzi.dictionarySearch('小孩', 'exact')[0]
+
+    assert.deepEqual(results.length, 1);
+    assert.deepEqual(results[0].traditional, '小孩');
+  });
+
+
   it('should now do a dictionary search with the same character and ignore the only condition', function() {
     var expected = [
       [
