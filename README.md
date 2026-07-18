@@ -99,6 +99,53 @@ console.log(decomposition);
      components4: [ '廿', '一', '由', '八' ] } }
 ```
 
+#### hanzi.getDecompositionTree(character, type);
+
+Returns a nested decomposition **tree** for a character (rather than the flat
+array `hanzi.decompose` gives). `type` is either:
+
+* `'primitive'` (default) — recurses down until it reaches primitives (基础部件),
+  the same stopping points as `decompose(character, 4)`. Keeps a fused/contained
+  frame whole.
+* `'graphical'` — continues all the way down to strokes, the same leaves as
+  `decompose(character, 3)`.
+
+Each node is `{ character, children }`; a leaf has an empty `children` array. A
+coherent component that has no Unicode glyph is surfaced as
+`{ character: 'No glyph available', id: <number>, children: [] }`, where `id` is
+its identifier in the underlying data. The flat level-3 and level-4
+decompositions are exactly the in-order leaves of the `'graphical'` and
+`'primitive'` trees, so the two views never disagree.
+
+```javascript
+// primitive tree — stops at recognisable building blocks
+console.log(hanzi.getDecompositionTree('哀', 'primitive'));
+
+{ character: '哀',
+  children:
+   [ { character: '衣', children: [] },
+     { character: '口', children: [] } ] }
+
+// a glyph-less stroke-blob is one leaf carrying its data id
+console.log(hanzi.getDecompositionTree('师', 'primitive'));
+
+{ character: '师',
+  children:
+   [ { character: 'No glyph available', id: '37207', children: [] },
+     { character: '帀', children: [] } ] }
+
+// graphical tree — continues down to strokes
+console.log(hanzi.getDecompositionTree('大', 'graphical'));
+
+{ character: '大',
+  children:
+   [ { character: '人',
+       children:
+        [ { character: '㇒', children: [] },
+          { character: '㇒', children: [] } ] },
+     { character: '一', children: [] } ] }
+```
+
 #### hanzi.ifComponentExists(character/component);
 
 Check if a component/character exists in the data. Returns boolean value.

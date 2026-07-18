@@ -472,6 +472,89 @@ describe('hanzidecomposer', function() {
     assert(!hanzi.isPrimitive('哀')); // split frame -> 衣, 口
     assert(!hanzi.isPrimitive('$')); // not in the decomposition data
   });
+  it('builds a primitive decomposition tree (stops at primitives)', function() {
+    // split frame kept whole as a leaf, filling beside it
+    assert.deepEqual(hanzi.getDecompositionTree('哀', 'primitive'), {
+      character: '哀',
+      children: [
+        {character: '衣', children: []},
+        {character: '口', children: []}
+      ]
+    });
+    // nested: split frame + a filling that decomposes further (果 -> 田, 木)
+    assert.deepEqual(hanzi.getDecompositionTree('裹', 'primitive'), {
+      character: '裹',
+      children: [
+        {character: '衣', children: []},
+        {
+          character: '果',
+          children: [
+            {character: '田', children: []},
+            {character: '木', children: []}
+          ]
+        }
+      ]
+    });
+    // an unnameable stroke-blob is one gap leaf carrying its numbered id
+    assert.deepEqual(hanzi.getDecompositionTree('师', 'primitive'), {
+      character: '师',
+      children: [
+        {character: 'No glyph available', id: '37207', children: []},
+        {character: '帀', children: []}
+      ]
+    });
+  });
+  it('builds a graphical decomposition tree (continues to strokes)', function() {
+    assert.deepEqual(hanzi.getDecompositionTree('大', 'graphical'), {
+      character: '大',
+      children: [
+        {
+          character: '人',
+          children: [
+            {character: '㇒', children: []},
+            {character: '㇒', children: []}
+          ]
+        },
+        {character: '一', children: []}
+      ]
+    });
+  });
+  it('flat level-3/4 decompositions are the leaves of the trees', function() {
+    // the flat arrays are just flattenTree() of the respective trees, so the two
+    // views can never drift apart
+    function leaves(node) {
+      if (!node.children.length) return [node.character];
+      return node.children.reduce((a, c) => a.concat(leaves(c)), []);
+    }
+    ['哀', '裹', '师', '大', '想', '林'].forEach(function(ch) {
+      assert.deepEqual(
+        leaves(hanzi.getDecompositionTree(ch, 'graphical')),
+        hanzi.decompose(ch, 3).components
+      );
+      assert.deepEqual(
+        leaves(hanzi.getDecompositionTree(ch, 'primitive')),
+        hanzi.decompose(ch, 4).components
+      );
+    });
+  });
+  it('validates getDecompositionTree input and type', function() {
+    assert.equal(hanzi.getDecompositionTree('', 'primitive'), 'Invalid Input');
+    assert.equal(
+      hanzi.getDecompositionTree(null, 'primitive'),
+      'Invalid Input'
+    );
+    // an unknown single token is echoed as a leaf, just like decompose()
+    assert.deepEqual(hanzi.getDecompositionTree('a', 'primitive'), {
+      character: 'a',
+      children: []
+    });
+    assert.equal(hanzi.getDecompositionTree('哀', 'nonsense'), 'Invalid Type');
+    // type defaults to 'primitive' when omitted
+    assert.deepEqual(
+      hanzi.getDecompositionTree('哀'),
+      hanzi.getDecompositionTree('哀', 'primitive')
+    );
+  });
 });
 
 describe('decomposeMany', () => {
