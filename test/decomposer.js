@@ -16,7 +16,8 @@ describe('hanzidecomposer', function() {
       character: 'a',
       components1: ['a'],
       components2: ['a'],
-      components3: ['a']
+      components3: ['a'],
+      components4: ['a']
     });
   });
 
@@ -120,6 +121,7 @@ describe('hanzidecomposer', function() {
       '团',
       '图',
       '围',
+      '田',
       '困',
       '恩',
       '固',
@@ -307,7 +309,12 @@ describe('hanzidecomposer', function() {
     ]);
   });
   it('should radical decompose simplified character', function() {
-    assert.deepEqual(hanzi.decompose('爱').components2, ['爫', '冖', '𠂇', '又']);
+    assert.deepEqual(hanzi.decompose('爱').components2, [
+      '爫',
+      '冖',
+      '𠂇',
+      '又'
+    ]);
   });
   it('should graphical decompose simplified character', function() {
     assert.deepEqual(hanzi.decompose('爱').components3, [
@@ -326,7 +333,12 @@ describe('hanzidecomposer', function() {
     ]);
   });
   it('should radical decompose traditional character', function() {
-    assert.deepEqual(hanzi.decompose('愛').components2, ['爫', '冖', '心', '夂']);
+    assert.deepEqual(hanzi.decompose('愛').components2, [
+      '爫',
+      '冖',
+      '心',
+      '夂'
+    ]);
   });
   it('should graphical decompose traditional character', function() {
     assert.deepEqual(hanzi.decompose('愛').components3, [
@@ -341,6 +353,125 @@ describe('hanzidecomposer', function() {
       '㇒'
     ]);
   });
+
+  it('should primitive decompose simplified character', function() {
+    assert.deepEqual(hanzi.decompose('爱').components4, [
+      '爫',
+      '冖',
+      '𠂇',
+      '又'
+    ]);
+  });
+  it('should primitive decompose traditional character', function() {
+    assert.deepEqual(hanzi.decompose('愛').components4, [
+      '爫',
+      '冖',
+      '心',
+      '夂'
+    ]);
+  });
+  it('should stop primitive decomposition at meaningful units, not strokes', function() {
+    // radicalDecomposition over-splits 成 into strokes; primitive stops at 万, 戈
+    assert.deepEqual(hanzi.decompose('成').components4, ['万', '戈']);
+    assert.deepEqual(hanzi.decompose('相').components4, ['木', '目']);
+    assert.deepEqual(hanzi.decompose('明').components4, ['日', '月']);
+  });
+  it('keeps an indivisible primitive whole', function() {
+    // 万 = d/t(一,<hook>): a touch join that is not two named components -> stop
+    assert.deepEqual(hanzi.decompose('万', 4).components, ['万']);
+  });
+  it('keeps an independent single-stroke component (单笔部件)', function() {
+    assert.deepEqual(hanzi.decompose('旦', 4).components, ['日', '一']);
+  });
+  it('keeps a fused/contained shape whole', function() {
+    // bonded base codes stop: 大 = w(人,一) contained, 包 = lock(勹,巳) interlocked
+    assert.deepEqual(hanzi.decompose('大', 4).components, ['大']);
+    assert.deepEqual(hanzi.decompose('包', 4).components, ['包']);
+  });
+  it('splits a 衣-frame, keeping the frame whole', function() {
+    // split(衣, X): 衣 is the frame the filling X sits inside — keep 衣 whole and
+    // decompose only the filling, so 哀 -> [衣, 口] rather than the fused [哀]
+    assert.deepEqual(hanzi.decompose('哀', 4).components, ['衣', '口']);
+    assert.deepEqual(hanzi.decompose('衷', 4).components, ['衣', '中']);
+    assert.deepEqual(hanzi.decompose('裹', 4).components, ['衣', '田', '木']);
+    assert.deepEqual(hanzi.decompose('襄', 4).components, [
+      '衣',
+      '口',
+      '口',
+      '𠀎'
+    ]);
+  });
+  it('stops at an overlapping (intersecting-stroke) join', function() {
+    // /o overlaps are fused: 东 = d/o(七,小), 心 = d/o(𠁼,㇃)
+    assert.deepEqual(hanzi.decompose('东', 4).components, ['东']);
+    assert.deepEqual(hanzi.decompose('心', 4).components, ['心']);
+  });
+  it('splits a touch join of two named components', function() {
+    // /t touch of two named pieces splits (古 = 十 + 口), and 想 -> 木, 目, 心
+    assert.deepEqual(hanzi.decompose('古', 4).components, ['十', '口']);
+    assert.deepEqual(hanzi.decompose('想', 4).components, ['木', '目', '心']);
+  });
+  it('keeps a small stroke-cluster component whole', function() {
+    // 八 = rrefr(㇒) expands to two strokes but is itself a unit
+    assert.deepEqual(hanzi.decompose('八', 4).components, ['八']);
+    assert.deepEqual(hanzi.decompose('二', 4).components, ['二']);
+  });
+  it('surfaces an unnameable component as one gap, not loose strokes', function() {
+    // 变's middle is a coherent shape with no Unicode glyph: shown as one gap
+    // alongside its named neighbours (八, 又), not shredded into strokes
+    assert.deepEqual(hanzi.decompose('变', 4).components, [
+      '亠',
+      'No glyph available',
+      '八',
+      '又'
+    ]);
+    // but a numbered node that still holds a named component is traversed:
+    assert.deepEqual(hanzi.decompose('爱', 4).components, [
+      '爫',
+      '冖',
+      '𠂇',
+      '又'
+    ]);
+  });
+  it('surfaces a stroke-blob part as one No-glyph gap beside its named siblings', function() {
+    // a numbered node built only from strokes (师's / 归's left, 段's left) is a
+    // glyph-less component: treated as a character, it surfaces as ONE "No glyph
+    // available" gap while its named siblings are kept — not shredded into strokes,
+    // and not forcing the whole character to stop.
+    assert.deepEqual(hanzi.decompose('师', 4).components, [
+      'No glyph available',
+      '帀'
+    ]);
+    assert.deepEqual(hanzi.decompose('段', 4).components, [
+      'No glyph available',
+      '几',
+      '又'
+    ]);
+    // a 二 inside the blob dissolves rather than forcing a shred (isUnnameableBlob,
+    // not resolvesToStrokesOnly): 那's left (…二…) is one gap, not ㇆ 二 丨
+    assert.deepEqual(hanzi.decompose('那', 4).components, [
+      'No glyph available',
+      '阝'
+    ]);
+  });
+  it('stops at a surround that is not two named components', function() {
+    // 彐 = str(㇕,二): a surround of one stroke + one stroke-cluster (not two
+    // named components) is one recognisable unit -> stop instead of shredding
+    assert.deepEqual(hanzi.decompose('彐', 4).components, ['彐']);
+    assert.deepEqual(hanzi.decompose('当', 4).components, ['⺌', '彐']);
+    // a surround of two named components still splits:
+    assert.deepEqual(hanzi.decompose('国', 4).components, ['囗', '玉']);
+    assert.deepEqual(hanzi.decompose('所', 4).components, ['戶', '斤']);
+  });
+  it('identifies whether a character/component is a primitive', function() {
+    assert(hanzi.isPrimitive('木')); // fused pictograph
+    assert(hanzi.isPrimitive('大')); // contained shape
+    assert(hanzi.isPrimitive('八')); // stroke-cluster unit
+    assert(!hanzi.isPrimitive('成')); // compound -> 万, 戈
+    assert(!hanzi.isPrimitive('相')); // compound -> 木, 目
+    assert(!hanzi.isPrimitive('哀')); // split frame -> 衣, 口
+    assert(!hanzi.isPrimitive('$')); // not in the decomposition data
+  });
 });
 
 describe('decomposeMany', () => {
@@ -350,19 +481,22 @@ describe('decomposeMany', () => {
         character: '和',
         components1: ['禾', '口'],
         components2: ['禾', '口'],
-        components3: ['㇒', '一', '丨', '㇒', '㇒', '口']
+        components3: ['㇒', '一', '丨', '㇒', '㇒', '口'],
+        components4: ['禾', '口']
       },
       挂: {
         character: '挂',
         components1: ['扌', '圭'],
         components2: ['扌', '土', '土'],
-        components3: ['亅', '一', '一', '一', '丨', '一', '一', '丨', '一']
+        components3: ['亅', '一', '一', '一', '丨', '一', '一', '丨', '一'],
+        components4: ['扌', '土', '土']
       },
       爱: {
         character: '爱',
         components1: ['No glyph available', '友'],
         components2: ['爫', '冖', '𠂇', '又'],
-        components3: ['爫', '冖', '𠂇', '㇇', '㇏']
+        components3: ['爫', '冖', '𠂇', '㇇', '㇏'],
+        components4: ['爫', '冖', '𠂇', '又']
       }
     });
   });

@@ -41,6 +41,7 @@ Type of decomposition levels:
 * 1 - "Once" (only decomposes character once),
 * 2 - "Radical" (decomposes character into its lowest radical components),
 * 3 - "Graphical" (decomposes into lowest forms, will be mostly strokes and small indivisable units)
+* 4 - "Primitive" (decomposes into meaningful building blocks — 基础部件 — stopping at recognisable components instead of strokes; keeps fused/contained/surrounding shapes whole, preserves independent single strokes, and surfaces a coherent component that has no Unicode glyph as `No glyph available`)
 
 ```javascript
 var decomposition = hanzi.decompose('爱');
@@ -49,7 +50,8 @@ console.log(decomposition);
 { character: '爱',
   components1: [ 'No glyph available', '友' ],
   components2: [ '爫', '冖', '𠂇', '又' ],
-  components3: [ '爫', '冖', '𠂇', '㇇', '㇏' ] }
+  components3: [ '爫', '冖', '𠂇', '㇇', '㇏' ],
+  components4: [ '爫', '冖', '𠂇', '又' ] }
 
 //Example of forced level decomposition
 
@@ -58,6 +60,16 @@ console.log(decomposition);
 
 { character: '爱', components: [ '爫', '冖', '𠂇', '又' ] }
 ```
+
+The "Primitive" level (4) is designed to stop at meaningful components rather than
+over-splitting into strokes the way "Radical" (2) can. For example `hanzi.decompose('成', 2)`
+returns `[ '一', '丿', '㇆', '戈' ]`, while `hanzi.decompose('成', 4)` returns `[ '万', '戈' ]`.
+It stops at a recognisable radical rather than breaking it into strokes — e.g.
+`hanzi.decompose('当', 4)` returns `[ '⺌', '彐' ]` (not `[ '⺌', '㇕', '二' ]`) and
+`hanzi.decompose('所', 4)` returns `[ '戶', '斤' ]`. When part of a glyph is a
+coherent shape with no Unicode codepoint, the whole recognisable glyph is kept
+rather than shredding it into loose strokes — so `hanzi.decompose('售', 4)`
+returns `[ '隹', '口' ]` and `hanzi.decompose('钱', 4)` returns `[ '钅', '戋' ]`.
 
 #### hanzi.decomposeMany(character string, type of decomposition);
 
@@ -71,17 +83,20 @@ console.log(decomposition);
    { character: '爱',
      components1: [ 'No glyph available', '友' ],
      components2: [ '爫', '冖', '𠂇', '又' ],
-     components3: [ '爫', '冖', '𠂇', '㇇', '㇏' ] },
+     components3: [ '爫', '冖', '𠂇', '㇇', '㇏' ],
+     components4: [ '爫', '冖', '𠂇', '又' ] },
   '橄':
    { character: '橄',
      components1: [ '木', '敢' ],
      components2: [ '木', 'No glyph available', '耳', '⺙' ],
-     components3: [ '一', '丨', '㇒', '㇒', '匚', '一', '一', '丨', '丨', '一', '一', '丿', '一', '㇒', '㇒' ] },
+     components3: [ '一', '丨', '㇒', '㇒', '匚', '一', '一', '丨', '丨', '一', '一', '丿', '一', '㇒', '㇒' ],
+     components4: [ '木', '匚', '耳', '⺙' ] },
   '黃':
    { character: '黃',
      components1: [ '廿', 'No glyph available' ],
      components2: [ '黃' ],
-     components3: [ '卄', '一', '一', '一', '一', '丨', '凵', '㇒', '㇒' ] } }
+     components3: [ '卄', '一', '一', '一', '一', '丨', '凵', '㇒', '㇒' ],
+     components4: [ '廿', '一', '由', '八' ] } }
 ```
 
 #### hanzi.ifComponentExists(character/component);
@@ -94,6 +109,24 @@ console.log(hanzi.ifComponentExists('乂'));
 true
 
 console.log(hanzi.ifComponentExists('$'));
+
+false
+```
+
+#### hanzi.isPrimitive(character/component);
+
+Check if a character/component is a primitive building block — i.e. whether
+primitive decomposition (level 4) stops at it rather than breaking it into
+smaller components. Fused/contained shapes (大, 木, 哀), stroke-cluster units
+(八, 二) and single strokes count as primitives; compounds do not. Returns a
+boolean.
+
+```javascript
+console.log(hanzi.isPrimitive('木'));
+
+true
+
+console.log(hanzi.isPrimitive('成')); // decomposes to 万, 戈
 
 false
 ```
