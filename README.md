@@ -417,6 +417,8 @@ The sample above is truncated for brevity. The full result is longer, because a 
 
 This function takes a decomposition object created by hanzi.decompose() or a character, then returns an object that displays all possible combinations of phonetic regularity relationship of the character to all its components.
 
+The components it scores are drawn from the whole **primitive decomposition tree** — every node in the tree, both internal grouping nodes and leaves (deduplicated). This lets it catch a phonetic component that sits at an intermediate node (e.g. `相` inside `想`, or `果` inside `裹`) rather than only the outermost split.
+
 Phonetic Regularity Scale:
 
 *   0 = No regularity
@@ -425,16 +427,25 @@ Phonetic Regularity Scale:
 *   3 = Similar in Initial (alliterates)
 *   4 = Similar in Final (rhymes)
 
-The object returned is organized by the possible pronunciations of the character. You may notice duplicate entries in the fields, but these are there based on the similarities between the decomposition levels. It is up to the developer to use this data or not.
+The object returned is organized by the possible pronunciations of the character. A component may appear more than once when it has multiple readings (each reading is scored separately). It is up to the developer to use this data or not.
 
 ```javascript
 console.log(hanzi.determinePhoneticRegularity('洋'));
 
 { yang2:
    { character: '洋',
-     component: [ '氵', '羊', '羊', '氵', '羊', '羊' ],
-     phoneticpinyin: [ 'shui3', 'Yang2', 'yang2', 'shui3', 'Yang2', 'yang2' ],
-     regularity: [ 0, 1, 1, 0, 1, 1 ] } }
+     component: [ '氵', '羊', '羊' ],
+     phoneticpinyin: [ 'shui3', 'Yang2', 'yang2' ],
+     regularity: [ 0, 1, 1 ] } }
+
+// 果 (guo3) is an internal tree node of 裹, and is still found (exact match):
+console.log(hanzi.determinePhoneticRegularity('裹'));
+
+{ guo3:
+   { character: '裹',
+     component: [ '衣', '衣', '果', '田', '田', '木', '木' ],
+     phoneticpinyin: [ 'yi1', 'yi4', 'guo3', 'Tian2', 'tian2', 'Mu4', 'mu4' ],
+     regularity: [ 0, 0, 1, 0, 0, 0, 0 ] } }
 ```
 
 #### hanzi.getRadicalMeaning(radical);

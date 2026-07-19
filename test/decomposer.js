@@ -282,24 +282,27 @@ describe('hanzidecomposer', function() {
   });
 
   it('determines phonetic regularity', function() {
+    // components come from the whole primitive decomposition tree (every node,
+    // deduped); 氐 (the phonetic) is an exact match, so 低 stops there instead of
+    // over-splitting into 氏/丶
     var expected = {
       di1: {
         character: '低',
-        component: ['亻', '氐', '氐', '亻', '氏', '氏', '丶', '丶'],
-        phoneticpinyin: [
-          'ren2',
-          'di1',
-          'di3',
-          'ren2',
-          'shi4',
-          'zhi1',
-          'dian3',
-          'zhu3'
-        ],
-        regularity: [0, 1, 2, 0, 4, 4, 3, 0]
+        component: ['亻', '氐', '氐'],
+        phoneticpinyin: ['ren2', 'di1', 'di3'],
+        regularity: [0, 1, 2]
       }
     };
     assert.deepEqual(hanzi.determinePhoneticRegularity('低'), expected);
+  });
+  it('finds a phonetic component that is an internal tree node', function() {
+    // 裹 = split(衣, 果): 果 is an internal grouping node, not a leaf. Sourcing
+    // components from the tree (nodes included) lets 果 (guo3, exact) be found.
+    var reg = hanzi.determinePhoneticRegularity('裹').guo3;
+    assert.equal(reg.component[reg.regularity.indexOf(1)], '果');
+    // and its child leaves are still present in the same pass
+    assert(reg.component.indexOf('田') !== -1);
+    assert(reg.component.indexOf('木') !== -1);
   });
 
   it('should once decompose simplified character', function() {
